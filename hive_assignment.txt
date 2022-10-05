@@ -1,0 +1,58 @@
+1. Download vechile sales data -> https://github.com/shashank-mishra219/Hive-Class/blob/main/sales_order_data.csv
+Download the data and move it to cloudera using Filezilla
+
+2. Store raw data into hdfs location
+Create a folder in Hadoop:
+hadoop fs -mkdir /tmp/assignment_1
+
+Store raw data into hdfs location:
+hadoop fs -put /home/cloudera/Documents/sales_order_data.csv /tmp/assignment_1
+
+Confirm where data is stored in hdfs location:
+hadoop fs -ls /tmp/assignment_1/
+
+3. Create a internal hive table "sales_order_csv" which will store csv data sales_order_csv .. make sure to skip header row while creating table
+create database hive_assignment;
+show databases;
+use hive_assignment;
+
+create table sales_order_csv(ordernumber int, quantityordered int, price_each float, orderlinenumber int, sales float, status string, qtr_id int, month_id int, year_id int, productline string, msrp int, productcode array<string>, phone array<string>, city string)
+row format delimited
+fields terminated by ','
+tblproperties("skip.header.line.count"="1");
+
+4. Load data from hdfs path into "sales_order_csv" 
+load data local inpath 'file:///home/cloudera/Documents/sales_order_data.csv' into table sales_order_csv;
+
+set hive.cli.print.header = true;
+
+select * from sales_order_csv limit 10;
+
+5. Create an internal hive table which will store data in ORC format "sales_order_orc"
+create table sales_order_csv_orc(ordernumber int, quantityordered int, price_each float, orderlinenumber int, sales float, status string, qtr_id int, month_id int, year_id int, productline string, msrp int, productcode array<string>, phone varchar, city string)
+stored as orc;
+
+6. Load data from "sales_order_csv" into "sales_order_orc"
+from sales_order_csv insert overwrite table sales_order_csv_orc select *;
+
+select * from sales_order_csv_orc limit 10;
+
+Perform below menioned queries on "sales_order_orc" table :
+
+a. Calculate total sales per year
+select year_id, sum(sales) as total_sales from sales_order_csv_orc group by year_id;
+
+b. Find a product for which maximum orders were placed
+select productline,sum(quantityordered) as total_sales from sales_order_csv_orc group by productline order by total_sales desc limit 1;
+
+c. Calculate the total sales for each quarter
+select qtr_id, sum(sales) as total_sales from sales_order_csv_orc group by qtr_id;
+
+d. In which quarter sales was minimum
+select qtr_id, sum(sales) as total_sales from sales_order_csv_orc group by qtr_id order by total_sales asc limit 1;
+
+e. In which country sales was maximum and in which country sales was minimum
+select city, sum(sales) as total_sales from sales_order_csv_orc group by c                                                                             ity order by total_sales desc; 
+
+f. Calculate quartelry sales for each city
+select qtr_id, city, sum(sales) from sales_order_csv_orc group by qtr_id, city;
